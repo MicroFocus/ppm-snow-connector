@@ -23,7 +23,7 @@ import java.util.UUID;
 
 public class SNowRestClient {
 
-    private boolean ENABLE_REST_CALLS_STATUS_LOG = true;
+    private boolean ENABLE_REST_CALLS_STATUS_LOG = false;
 
     private final static Logger logger = LogManager.getLogger(SNowRestClient.class);
 

@@ -13,9 +13,11 @@ import com.ppm.integration.agilesdk.FunctionIntegration;
 import com.ppm.integration.agilesdk.IntegrationConnector;
 import com.ppm.integration.agilesdk.ValueSet;
 import com.ppm.integration.agilesdk.connector.snow.model.SNowProduct;
+import com.ppm.integration.agilesdk.connector.snow.model.SNowUser;
 import com.ppm.integration.agilesdk.connector.snow.service.SNowServiceProvider;
 import com.ppm.integration.agilesdk.model.AgileProject;
 import com.ppm.integration.agilesdk.ui.*;
+import com.sun.jimi.core.util.P;
 
 /**
  * Main Connector class file for ServiceNow connector.
@@ -57,14 +59,12 @@ public class SNowIntegrationConnector extends IntegrationConnector {
 
     @Override
     public List<AgileProject> getAgileProjects(ValueSet instanceConfigurationParameters) {
-        List<SNowProduct> products = SNowServiceProvider.get(instanceConfigurationParameters).getAllProducts();
 
-        return products.stream().map(product -> {
-            AgileProject proj = new AgileProject();
-            proj.setValue(product.getNumber());
-            proj.setDisplayName(product.short_description);
-            return proj;
-        }).collect(Collectors.toList());
+        AgileProject snowProject = new AgileProject();
+        snowProject.setDisplayName("SNow Instance");
+        snowProject.setValue("SNow Instance");
+
+        return Arrays.asList(snowProject);
 
     }
 
@@ -75,7 +75,22 @@ public class SNowIntegrationConnector extends IntegrationConnector {
 
     @Override
     public List<String> getIntegrationClasses() {
-        return Arrays.asList(new String[]{"com.ppm.integration.agilesdk.connector.snow.SNowWorkPlanIntegration"});
+        return Arrays.asList(new String[]{"com.ppm.integration.agilesdk.connector.snow.SNowWorkPlanIntegration", "com.ppm.integration.agilesdk.connector.snow.SNowRequestIntegration"});
     }
 
+    @Override
+    public String testConnection(ValueSet instanceConfigurationParameters) {
+        String username = instanceConfigurationParameters.get(SNowConstants.KEY_USERNAME);
+        try {
+           SNowUser currentUser = SNowServiceProvider.get(instanceConfigurationParameters).getUserInfo(username);
+           if (currentUser == null) {
+               throw new RuntimeException("We couldn't find a valid SNow User for username "+username);
+           }
+        } catch (Exception e) {
+            return e.getMessage();
+        }
+
+        // No problem!
+        return null;
+    }
 }
