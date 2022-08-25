@@ -1,6 +1,8 @@
 package com.ppm.integration.agilesdk.connector.snow.service;
 
 import com.google.gson.*;
+import com.hp.ppm.common.model.AgileEntityIdName;
+import com.hp.ppm.common.model.AgileEntityIdProjectDate;
 import com.ppm.integration.agilesdk.connector.snow.SNowConstants;
 import com.ppm.integration.agilesdk.connector.snow.SNowRequestIntegration;
 import com.ppm.integration.agilesdk.connector.snow.model.*;
@@ -135,6 +137,8 @@ public class SNowService {
             gson = new GsonBuilder()
                     .registerTypeAdapter(SNowObject.Link.class, new SNowLinkDeserializer())
                     .registerTypeAdapter(AgileEntity.class, new AgileEntityDeserializer())
+                    .registerTypeAdapter(AgileEntityIdProjectDate.class, new AgileEntityIdProjectDateDeserializer())
+                    .registerTypeAdapter(AgileEntityIdName.class, new AgileEntityIdNameDeserializer())
                     .create();
         }
 
@@ -249,6 +253,24 @@ public class SNowService {
         return runGetTableList(tableName, AgileEntity.class, null, queryString);
     }
 
+    public List<AgileEntityIdProjectDate> getAgileEntityIDsToCreateInPPM(String tableName, Date createdSinceDate) {
+        String queryString = "";
+        if (createdSinceDate != null) {
+
+            // Example of query string for date: sys_updated_on>javascript:gs.dateGenerate('2022-06-13','14:15:16')
+            // This is taken from the query string builder. There must be a cleaner way to pass dates, but this works...
+            queryString += "sys_created_on>javascript:gs.dateGenerate('" + new SimpleDateFormat("yyyy-MM-dd").format(createdSinceDate) + "','" + new SimpleDateFormat("HH:mm:ss").format(createdSinceDate) + "')";
+        }
+        List<AgileEntityIdProjectDate> entitiesIdsCreationDates = runGetTableList(tableName, AgileEntityIdProjectDate.class, "sys_created_on,sys_id,number", queryString);
+
+        return entitiesIdsCreationDates;
+    }
+
+    public List<AgileEntityIdName> getAgileEntityIDsNames(String tableName) {
+        List<AgileEntityIdName> entitiesIdsCreationDates = runGetTableList(tableName, AgileEntityIdName.class, ",sys_id,number,short_description", null);
+        return entitiesIdsCreationDates;
+    }
+
     /**
      * SNow will return empty string for Links if there's no value... we need to deserialize this with special logic
      */
@@ -324,6 +346,103 @@ public class SNowService {
                     entity.addField(prop.getKey(), ppmValue);
                 }
             }
+            return entity;
+        }
+    }
+
+
+
+    /**
+     * To deserialize an entity into an AgileEntityIdName, we need it to include sys_id, number and short_description.
+     * The project is dummy so we'll set the SNow instance in it.
+     */
+    private static class AgileEntityIdNameDeserializer implements JsonDeserializer<AgileEntityIdName> {
+
+        @Override
+        public AgileEntityIdName deserialize(JsonElement snowRecordElem, Type arg1,
+                                                    JsonDeserializationContext arg2) throws JsonParseException {
+
+            if (!snowRecordElem.isJsonObject()) {
+                throw new RuntimeException("Can only deserialize JSonObject into AgileEntityIdName, but this wasn't:" + snowRecordElem.toString());
+            }
+
+            JsonObject snowRecord = snowRecordElem.getAsJsonObject();
+
+
+            String sysId = "ERROR";
+            String number = "N/A";
+
+            if (snowRecord.has("sys_id")) {
+                sysId = snowRecord.getAsJsonPrimitive("sys_id").getAsString();
+            }
+
+
+            if (snowRecord.has("number")) {
+                number = snowRecord.getAsJsonPrimitive("number").getAsString();
+            }
+
+            // We include both the number and the SYS ID in the PPM Entity ID.
+            // Sync ops needs the SYS_ID (unique identifier), but end-users are only familiar with Number
+            String entityId = number + " (" + sysId + ")";
+
+            String description = "";
+
+            if (snowRecord.has("short_description")) {
+                description = snowRecord.getAsJsonPrimitive("short_description").getAsString();
+            }
+            String entityName = "[" + number + "] " + description;
+            AgileEntityIdName entity = new AgileEntityIdName(entityId, entityName);
+
+            return entity;
+        }
+    }
+
+    /**
+     * To deserialize an entity into an AgileEntityIdProjectDate, we need it to include sys_id, number and sys_created_on.
+     * The project is dummy so we'll set the SNow instance in it.
+     */
+    private static class AgileEntityIdProjectDateDeserializer implements JsonDeserializer<AgileEntityIdProjectDate> {
+
+        @Override
+        public AgileEntityIdProjectDate deserialize(JsonElement snowRecordElem, Type arg1,
+                                       JsonDeserializationContext arg2) throws JsonParseException {
+
+            if (!snowRecordElem.isJsonObject()) {
+                throw new RuntimeException("Can only deserialize JSonObject into AgileEntityIdProjectDate, but this wasn't:" + snowRecordElem.toString());
+            }
+
+            JsonObject snowRecord = snowRecordElem.getAsJsonObject();
+
+
+            String sysId = "ERROR";
+            String number = "N/A";
+
+            if (snowRecord.has("sys_id")) {
+                sysId = snowRecord.getAsJsonPrimitive("sys_id").getAsString();
+            }
+
+
+            if (snowRecord.has("number")) {
+                number = snowRecord.getAsJsonPrimitive("number").getAsString();
+            }
+
+            // We include both the number and the SYS ID in the PPM Entity ID.
+            // Sync ops needs the SYS_ID (unique identifier), but end-users are only familiar with Number
+            String entityId = number + " (" + sysId + ")";
+
+            Date creationDate = null;
+
+            if (snowRecord.has("sys_created_on")) {
+                String creationDateStr = snowRecord.getAsJsonPrimitive("sys_created_on").getAsString();
+                try {
+                    creationDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(creationDateStr);
+                } catch (ParseException e) {
+                    throw new RuntimeException("Couldn't parse following creation date value: " + creationDateStr);
+                }
+            }
+
+            AgileEntityIdProjectDate entity = new AgileEntityIdProjectDate(entityId, "SNow Instance", creationDate);
+
             return entity;
         }
     }

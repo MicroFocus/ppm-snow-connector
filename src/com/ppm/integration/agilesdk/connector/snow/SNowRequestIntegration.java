@@ -1,5 +1,7 @@
 package com.ppm.integration.agilesdk.connector.snow;
 
+import com.hp.ppm.common.model.AgileEntityIdName;
+import com.hp.ppm.common.model.AgileEntityIdProjectDate;
 import com.hp.ppm.integration.model.AgileEntityFieldValue;
 import com.ppm.integration.agilesdk.ValueSet;
 import com.ppm.integration.agilesdk.connector.snow.model.SNowField;
@@ -11,12 +13,10 @@ import com.ppm.integration.agilesdk.dm.RequestIntegration;
 import com.ppm.integration.agilesdk.model.AgileEntity;
 import com.ppm.integration.agilesdk.model.AgileEntityFieldInfo;
 import com.ppm.integration.agilesdk.model.AgileEntityInfo;
+import edu.emory.mathcs.backport.java.util.Collections;
 import org.apache.commons.lang.StringUtils;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class SNowRequestIntegration extends RequestIntegration {
@@ -150,5 +150,37 @@ public class SNowRequestIntegration extends RequestIntegration {
         }
 
         throw new RuntimeException("We couldn't extract the sys_id from entityId " + entityId + " . Format should be: 'number (sys_id)'");
+    }
+
+    @Override
+    public boolean supportsAgileEntityToNewPPMRequestSync() {
+        return true;
+    }
+
+    @Override
+    public List<AgileEntityIdProjectDate> getAgileEntityIDsToCreateInPPM(String agileProjectValue, String entityType, ValueSet instanceConfigurationParameters, Date createdSinceDate) {
+        List<AgileEntityIdProjectDate> entitiesIdDates = SNowServiceProvider.get(instanceConfigurationParameters).getAgileEntityIDsToCreateInPPM(entityType, createdSinceDate);
+        return entitiesIdDates;
+    }
+
+    @Override
+    public boolean supportsPPMRequestToExistingAgileEntitySync() {
+        return true;
+    }
+
+    @Override
+    public List<AgileEntityIdName> getCandidateEntitiesToSyncWithRequests(String agileProjectValue, String entityType, ValueSet instanceConfigurationParameters) {
+        List<AgileEntityIdName> entitiesIdNames = SNowServiceProvider.get(instanceConfigurationParameters).getAgileEntityIDsNames(entityType);
+        if (entitiesIdNames != null) {
+            Collections.sort(entitiesIdNames, new Comparator<AgileEntityIdName>() {
+                @Override
+                public int compare(AgileEntityIdName o1, AgileEntityIdName o2) {
+                    String s1 = o1 == null ? "" : o1.getName();
+                    String s2 = o2 == null ? "" : o2.getName();
+                    return s1.compareToIgnoreCase(s2);
+                }
+            });
+        }
+        return entitiesIdNames;
     }
 }
