@@ -9,16 +9,20 @@ package com.ppm.integration.agilesdk.connector.snow.rest;
 import com.kintana.core.logging.LogLevel;
 import com.kintana.core.logging.LogManager;
 import com.kintana.core.logging.Logger;
-import com.ppm.integration.agilesdk.connector.snow.SNowConstants;
 import org.apache.commons.lang.StringUtils;
-import org.apache.wink.client.ClientConfig;
-import org.apache.wink.client.ClientResponse;
-import org.apache.wink.client.Resource;
-import org.apache.wink.client.RestClient;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.ClientHttpResponse;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.web.client.DefaultResponseErrorHandler;
+import org.springframework.web.client.RestTemplate;
 
-import javax.ws.rs.core.MediaType;
 import java.io.UnsupportedEncodingException;
 import java.net.*;
+import java.util.Collections;
 import java.util.UUID;
 
 public class SNowRestClient {
@@ -27,54 +31,66 @@ public class SNowRestClient {
 
     private final static Logger logger = LogManager.getLogger(SNowRestClient.class);
 
-    private RestClient restClient;
     private SNowRestConfig snowConfig;
-    private ClientConfig clientConfig;
+    private RestTemplate restTemplate;
 
     public SNowRestClient(SNowRestConfig notionConfig) {
         this.snowConfig = notionConfig;
-        this.clientConfig = notionConfig.getClientConfig();
-        this.restClient = new RestClient(clientConfig);
+        this.restTemplate = buildRestTemplate(notionConfig);
     }
 
-    /**
-
-     * @param includeContentTypeHeader if true, we'll include the JSon "Content-Type" header. If false, we'll not include any Content-type header (to use when using GET or DELETE).
-     * @return
-     */
-    private Resource getSNowResource(String fullUrl, boolean includeContentTypeHeader, String uuid) {
-        Resource resource;
+    private URI normalizeUri(String fullUrl) {
         try {
             URL url = new URL(fullUrl);
             String urlPath = url.getHost();
             if (url.getPort() > 0) {
                 urlPath = urlPath + ":" + url.getPort();
             }
-            URI uri = null;
             try {
-                uri = new URI(url.getProtocol(), urlPath, url.getPath(), url.getQuery() == null ? null : URLDecoder.decode(url.getQuery(), "UTF-8"), null);
+                return new URI(url.getProtocol(), urlPath, url.getPath(), url.getQuery() == null ? null : URLDecoder.decode(url.getQuery(), "UTF-8"), null);
             } catch (UnsupportedEncodingException e) {
                 // This will never happen.
                 throw new RuntimeException("Impossible encoding error occurred", e);
             }
-            resource = restClient.resource(uri).accept(MediaType.APPLICATION_JSON).header("Authorization", snowConfig.getBasicAuthorizationToken());
-
-            // Following header is required for easy HTTP request tracing in systems such as IBM DataPower.
-            if (uuid != null) {
-                resource.header("X-B3-TraceId", uuid);
-            }
-
-            if (includeContentTypeHeader) {
-                resource.contentType(MediaType.APPLICATION_JSON);
-            }
-
         } catch (MalformedURLException e) {
             throw new RestRequestException( // is a malformed URL
                     400, String.format("%s is a malformed URL", fullUrl));
         } catch (URISyntaxException e) {
             throw new RestRequestException(400, String.format("%s is a malformed URL", fullUrl));
         }
-        return resource;
+    }
+
+    private HttpHeaders getHeaders(boolean includeContentTypeHeader, String uuid) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
+        headers.set("Authorization", snowConfig.getBasicAuthorizationToken());
+
+        // Following header is required for easy HTTP request tracing in systems such as IBM DataPower.
+        if (uuid != null) {
+            headers.set("X-B3-TraceId", uuid);
+        }
+
+        if (includeContentTypeHeader) {
+            headers.setContentType(MediaType.APPLICATION_JSON);
+        }
+
+        return headers;
+    }
+
+    private RestTemplate buildRestTemplate(SNowRestConfig config) {
+        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+        if (!StringUtils.isBlank(config.getProxyHost()) && config.getProxyPort() != null) {
+            requestFactory.setProxy(new Proxy(Proxy.Type.HTTP, new InetSocketAddress(config.getProxyHost(), config.getProxyPort().intValue())));
+        }
+
+        RestTemplate template = new RestTemplate(requestFactory);
+        template.setErrorHandler(new DefaultResponseErrorHandler() {
+            @Override
+            public boolean hasError(ClientHttpResponse response) {
+                return false;
+            }
+        });
+        return template;
     }
 
     public ClientResponse sendGet(String uri) {
@@ -84,8 +100,9 @@ public class SNowRestClient {
         }
 
         String uuid = UUID.randomUUID().toString();
-        Resource resource = this.getSNowResource(uri, false, uuid);
-        ClientResponse response = resource.get();
+        HttpEntity<String> requestEntity = new HttpEntity<String>(null, getHeaders(false, uuid));
+        ResponseEntity<String> responseEntity = restTemplate.exchange(normalizeUri(uri), HttpMethod.GET, requestEntity, String.class);
+        ClientResponse response = new ClientResponse(responseEntity.getStatusCode().value(), responseEntity.getBody());
 
         checkResponseStatus(200, response, uri, "GET", null, uuid);
 
@@ -124,8 +141,9 @@ public class SNowRestClient {
         }
 
         String uuid = UUID.randomUUID().toString();
-        Resource resource = this.getSNowResource(uri, true, uuid);
-        ClientResponse response = resource.post(jsonPayload);
+        HttpEntity<String> requestEntity = new HttpEntity<String>(jsonPayload, getHeaders(true, uuid));
+        ResponseEntity<String> responseEntity = restTemplate.exchange(normalizeUri(uri), HttpMethod.POST, requestEntity, String.class);
+        ClientResponse response = new ClientResponse(responseEntity.getStatusCode().value(), responseEntity.getBody());
         checkResponseStatus(expectedHttpStatusCode, response, uri, "POST", jsonPayload, uuid);
 
         return response;
@@ -138,8 +156,9 @@ public class SNowRestClient {
         }
 
         String uuid = UUID.randomUUID().toString();
-        Resource resource = this.getSNowResource(uri,true, uuid);
-        ClientResponse response = resource.put(jsonPayload);
+        HttpEntity<String> requestEntity = new HttpEntity<String>(jsonPayload, getHeaders(true, uuid));
+        ResponseEntity<String> responseEntity = restTemplate.exchange(normalizeUri(uri), HttpMethod.PUT, requestEntity, String.class);
+        ClientResponse response = new ClientResponse(responseEntity.getStatusCode().value(), responseEntity.getBody());
 
         checkResponseStatus(expectedHttpStatusCode, response, uri, "PUT", jsonPayload, uuid);
 
