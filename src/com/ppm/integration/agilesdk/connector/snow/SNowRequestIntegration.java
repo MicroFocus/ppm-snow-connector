@@ -14,7 +14,7 @@ import com.ppm.integration.agilesdk.model.AgileEntity;
 import com.ppm.integration.agilesdk.model.AgileEntityFieldInfo;
 import com.ppm.integration.agilesdk.model.AgileEntityInfo;
 import edu.emory.mathcs.backport.java.util.Collections;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.*;
 import java.util.stream.Collectors;

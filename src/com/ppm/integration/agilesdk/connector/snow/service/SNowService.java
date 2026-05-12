@@ -15,7 +15,7 @@ import com.ppm.integration.agilesdk.dm.User;
 import com.ppm.integration.agilesdk.model.AgileEntity;
 import com.kintana.core.logging.LogManager;
 import com.kintana.core.logging.Logger;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Type;
