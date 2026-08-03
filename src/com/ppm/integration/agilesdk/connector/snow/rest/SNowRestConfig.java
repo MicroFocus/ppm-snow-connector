@@ -6,35 +6,34 @@
 package com.ppm.integration.agilesdk.connector.snow.rest;
 
 import org.apache.commons.codec.binary.Base64;
-import org.apache.wink.client.ClientConfig;
 import org.springframework.util.StringUtils;
 
 public class SNowRestConfig {
 
     private static final String BASIC_AUTHENTICATION_PREFIX = "Basic ";
 
-    private ClientConfig clientConfig;
-
     private String basicAuthenticationToken;
 
     private String snowUrl;
 
-    public ClientConfig getClientConfig() {
-        return clientConfig;
-    }
+    private String proxyHost;
 
-    public SNowRestConfig() {
-        clientConfig = new ClientConfig();
-    }
+    private Integer proxyPort;
 
-
-    public ClientConfig setProxy(String proxyHost, String proxyPort) {
+    public void setProxy(String proxyHost, String proxyPort) {
 
         if (proxyHost != null && !proxyHost.isEmpty() && proxyPort != null && !proxyPort.isEmpty()) {
-            clientConfig.proxyHost(proxyHost);
-            clientConfig.proxyPort(Integer.parseInt(proxyPort));
+            this.proxyHost = proxyHost;
+            this.proxyPort = Integer.valueOf(proxyPort);
         }
-        return clientConfig;
+    }
+
+    public String getProxyHost() {
+        return proxyHost;
+    }
+
+    public Integer getProxyPort() {
+        return proxyPort;
     }
 
 

@@ -6,6 +6,7 @@ import com.hp.ppm.common.model.AgileEntityIdProjectDate;
 import com.ppm.integration.agilesdk.connector.snow.SNowConstants;
 import com.ppm.integration.agilesdk.connector.snow.SNowRequestIntegration;
 import com.ppm.integration.agilesdk.connector.snow.model.*;
+import com.ppm.integration.agilesdk.connector.snow.rest.ClientResponse;
 import com.ppm.integration.agilesdk.connector.snow.rest.SNowRestClient;
 import com.ppm.integration.agilesdk.dm.DataField;
 import com.ppm.integration.agilesdk.dm.ListNode;
@@ -14,8 +15,7 @@ import com.ppm.integration.agilesdk.dm.User;
 import com.ppm.integration.agilesdk.model.AgileEntity;
 import com.kintana.core.logging.LogManager;
 import com.kintana.core.logging.Logger;
-import org.apache.commons.lang.StringUtils;
-import org.apache.wink.client.ClientResponse;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Type;
