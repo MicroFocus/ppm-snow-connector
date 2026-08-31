@@ -12,14 +12,15 @@ import com.ppm.integration.agilesdk.pm.*;
 import com.ppm.integration.agilesdk.provider.LocalizationProvider;
 import com.ppm.integration.agilesdk.provider.Providers;
 import com.ppm.integration.agilesdk.ui.*;
-import org.apache.log4j.Logger;
+import com.kintana.core.logging.LogManager;
+import com.kintana.core.logging.Logger;
 
 import java.util.*;
 
 public class SNowWorkPlanIntegration extends WorkPlanIntegration {
 
 
-    private final Logger logger = Logger.getLogger(SNowWorkPlanIntegration.class);
+    private final Logger logger = LogManager.getLogger(SNowWorkPlanIntegration.class);
 
     public SNowWorkPlanIntegration() {
     }

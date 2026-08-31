@@ -2,7 +2,7 @@ package com.ppm.integration.agilesdk.connector.snow.service;
 
 import com.ppm.integration.agilesdk.connector.snow.rest.SNowRestClient;
 import com.ppm.integration.agilesdk.dm.User;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.HashMap;
 import java.util.Map;

@@ -6,15 +6,16 @@ import com.hp.ppm.common.model.AgileEntityIdProjectDate;
 import com.ppm.integration.agilesdk.connector.snow.SNowConstants;
 import com.ppm.integration.agilesdk.connector.snow.SNowRequestIntegration;
 import com.ppm.integration.agilesdk.connector.snow.model.*;
+import com.ppm.integration.agilesdk.connector.snow.rest.ClientResponse;
 import com.ppm.integration.agilesdk.connector.snow.rest.SNowRestClient;
 import com.ppm.integration.agilesdk.dm.DataField;
 import com.ppm.integration.agilesdk.dm.ListNode;
 import com.ppm.integration.agilesdk.dm.StringField;
 import com.ppm.integration.agilesdk.dm.User;
 import com.ppm.integration.agilesdk.model.AgileEntity;
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
-import org.apache.wink.client.ClientResponse;
+import com.kintana.core.logging.LogManager;
+import com.kintana.core.logging.Logger;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Type;
@@ -32,7 +33,7 @@ import java.util.stream.Collectors;
  */
 public class SNowService {
 
-    private final static Logger logger = Logger.getLogger(SNowService.class);
+    private final Logger logger = LogManager.getLogger(SNowService.class);
     public static final String INTERNAL_PPM_ENTITY_URL = "internal_ppm_entity_url";
 
     private SNowRestClient restClient;

@@ -11,7 +11,7 @@ import com.ppm.integration.agilesdk.connector.snow.rest.SNowRestClient;
 import com.ppm.integration.agilesdk.connector.snow.rest.SNowRestConfig;
 import com.ppm.integration.agilesdk.provider.Providers;
 import com.ppm.integration.agilesdk.provider.UserProvider;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public class SNowServiceProvider {
 
