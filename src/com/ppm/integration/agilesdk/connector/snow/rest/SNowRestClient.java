@@ -102,11 +102,26 @@ public class SNowRestClient {
         String uuid = UUID.randomUUID().toString();
         HttpEntity<String> requestEntity = new HttpEntity<String>(null, getHeaders(false, uuid));
         ResponseEntity<String> responseEntity = restTemplate.exchange(normalizeUri(uri), HttpMethod.GET, requestEntity, String.class);
-        ClientResponse response = new ClientResponse(responseEntity.getStatusCode().value(), responseEntity.getBody());
+        ClientResponse response = new ClientResponse(responseEntity.getStatusCode().value(), jsonIncludeNonNull(responseEntity.getBody()));
 
         checkResponseStatus(200, response, uri, "GET", null, uuid);
 
         return response;
+    }
+
+    private String jsonIncludeNonNull(String responseBody) {
+        try {
+            if (responseBody != null && !responseBody.trim().isEmpty()) {
+                com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                mapper.setSerializationInclusion(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL);
+
+                Object parsedBody = mapper.readValue(responseBody, Object.class);
+                return mapper.writeValueAsString(parsedBody);
+            }
+        } catch (Exception e) {
+            logger.debug("Error on Parsing data to remove null values from response body: " + e.getMessage(), e);
+        }
+        return responseBody;
     }
 
     private void checkResponseStatus(int expectedHttpStatusCode, ClientResponse response, String uri, String verb, String payload, String uuid) {
@@ -143,7 +158,7 @@ public class SNowRestClient {
         String uuid = UUID.randomUUID().toString();
         HttpEntity<String> requestEntity = new HttpEntity<String>(jsonPayload, getHeaders(true, uuid));
         ResponseEntity<String> responseEntity = restTemplate.exchange(normalizeUri(uri), HttpMethod.POST, requestEntity, String.class);
-        ClientResponse response = new ClientResponse(responseEntity.getStatusCode().value(), responseEntity.getBody());
+        ClientResponse response = new ClientResponse(responseEntity.getStatusCode().value(), jsonIncludeNonNull(responseEntity.getBody()));
         checkResponseStatus(expectedHttpStatusCode, response, uri, "POST", jsonPayload, uuid);
 
         return response;
@@ -158,7 +173,7 @@ public class SNowRestClient {
         String uuid = UUID.randomUUID().toString();
         HttpEntity<String> requestEntity = new HttpEntity<String>(jsonPayload, getHeaders(true, uuid));
         ResponseEntity<String> responseEntity = restTemplate.exchange(normalizeUri(uri), HttpMethod.PUT, requestEntity, String.class);
-        ClientResponse response = new ClientResponse(responseEntity.getStatusCode().value(), responseEntity.getBody());
+        ClientResponse response = new ClientResponse(responseEntity.getStatusCode().value(), jsonIncludeNonNull(responseEntity.getBody()));
 
         checkResponseStatus(expectedHttpStatusCode, response, uri, "PUT", jsonPayload, uuid);
 
