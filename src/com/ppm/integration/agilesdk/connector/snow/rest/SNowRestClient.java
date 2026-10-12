@@ -9,6 +9,8 @@ package com.ppm.integration.agilesdk.connector.snow.rest;
 import com.kintana.core.logging.LogLevel;
 import com.kintana.core.logging.LogManager;
 import com.kintana.core.logging.Logger;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -112,8 +114,8 @@ public class SNowRestClient {
     private String jsonIncludeNonNull(String responseBody) {
         try {
             if (responseBody != null && !responseBody.trim().isEmpty()) {
-                com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-                mapper.setSerializationInclusion(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL);
+                ObjectMapper mapper = new ObjectMapper();
+                mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
 
                 Object parsedBody = mapper.readValue(responseBody, Object.class);
                 return mapper.writeValueAsString(parsedBody);
